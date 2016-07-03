@@ -7,19 +7,26 @@ library(forecast)
 
 options(shiny.trace=TRUE)
 
-data <- read.csv("./resale-flat-prices/resale-flat-prices-based-on-registration-date-from-march-2012-onwards.csv", stringsAsFactors = FALSE)
-
-## clean data
-data$month <- as.yearmon(data$month)
-# replace block and street with address
-data <- within(data, address <- paste(block, street_name))
-data <- data[, -which(names(data) %in% c('block', 'street_name'))]
+data <- data.frame()
 
 getOptions <- function(col) {
   colist <- sort(unique(data[, col]))
   return(c('Any', colist))
 }
 shinyServer(function(input, output) {
+
+              withProgress(message = 'Loading data', value = 0, {
+                data <- read.csv("./resale-flat-prices/resale-flat-prices-based-on-registration-date-from-march-2012-onwards.csv", stringsAsFactors = FALSE)
+                incProgress(0.90, detail = "Transforming data")
+
+                ## clean data
+                data$month <- as.yearmon(data$month)
+                # replace block and street with address
+                data <- within(data, address <- paste(block, street_name))
+                data <<- data[, -which(names(data) %in% c('block', 'street_name'))]
+                incProgress(1, detail = "Done")
+              })
+
               output$town <- renderUI({
                 selectInput('town', 'Neighborhood', getOptions('town'))
               })
